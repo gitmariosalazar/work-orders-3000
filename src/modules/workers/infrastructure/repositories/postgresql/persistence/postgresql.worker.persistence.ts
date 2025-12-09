@@ -18,7 +18,7 @@ export class PostgreSqlWorkerPersistence implements InterfaceWorkerRepository {
           t.id_trabajador as worker_id,
           t.tr_identificacion as identification,
           t.tr_apellidos as last_names,
-          t.tr_nombres as first_ames,
+          t.tr_nombres as first_names,
           t.tr_telefono as phone_number,
           t.tr_celular as cell_phone,
           t.tr_correoe as email,
