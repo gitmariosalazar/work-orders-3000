@@ -45,4 +45,54 @@ export class PostgreSqlWorkerPersistence implements InterfaceWorkerRepository {
       throw error;
     }
   }
+
+  async findAllWorkersPaginated(params: { limit: number; offset: number; query?: string }): Promise<WorkerResponse[]> {
+    try {
+      const { limit, offset, query: searchQuery } = params;
+
+      let whereClause = '';
+      const queryParams: any[] = [];
+
+      if (searchQuery) {
+        whereClause = `WHERE t.tr_nombres ILIKE $1 OR t.tr_apellidos ILIKE $1 OR t.tr_identificacion ILIKE $1`;
+        queryParams.push(`%${searchQuery}%`);
+      }
+
+      const query: string = `
+      select
+          t.id_trabajador as worker_id,
+          t.tr_identificacion as identification,
+          t.tr_apellidos as last_names,
+          t.tr_nombres as first_names,
+          t.tr_telefono as phone_number,
+          t.tr_celular as cell_phone,
+          t.tr_correoe as email,
+          t.tr_direccion as address
+      from trabajadores t
+      ${whereClause}
+      order by t.id_trabajador
+      limit $${queryParams.length + 1} offset $${queryParams.length + 2};
+      `;
+
+      queryParams.push(limit, offset);
+
+      const result: WorkerSqlResponse[] =
+        await this.postgreSqlService.query<WorkerSqlResponse>(query, queryParams);
+
+      if (result.length === 0) {
+        throw new RpcException({
+          statusCode: statusCode.NOT_FOUND,
+          message: `Workers not found!`,
+        });
+      }
+
+      const response: WorkerResponse[] = result.map((worker) =>
+        WorkerAdapter.fromWorkerSqlResponseToWorkerResponse(worker),
+      );
+
+      return response;
+    } catch (error) {
+      throw error;
+    }
+  }
 }

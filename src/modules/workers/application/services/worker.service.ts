@@ -27,4 +27,20 @@ export class WorkerService implements InterfaceWorkerUseCase {
       throw error;
     }
   }
+
+  async findAllWorkersPaginated(params: { limit: number; offset: number; query?: string }): Promise<WorkerResponse[]> {
+    try {
+      const workers: WorkerResponse[] =
+        await this.workerRepository.findAllWorkersPaginated(params);
+      if (workers.length === 0) {
+        throw new RpcException({
+          statusCode: statusCode.NOT_FOUND,
+          message: `Workers not found!`,
+        });
+      }
+      return workers;
+    } catch (error) {
+      throw error;
+    }
+  }
 }

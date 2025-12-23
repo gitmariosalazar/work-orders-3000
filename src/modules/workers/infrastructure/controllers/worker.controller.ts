@@ -11,4 +11,10 @@ export class WorkerController {
   async findAllWorkers() {
     return this.workerService.findAllWorkers();
   }
+
+  @Get('paginated')
+  @MessagePattern('workers.find-all-workers-paginated')
+  async findAllWorkersPaginated(params: { limit: number; offset: number; query?: string }) {
+    return this.workerService.findAllWorkersPaginated(params);
+  }
 }
