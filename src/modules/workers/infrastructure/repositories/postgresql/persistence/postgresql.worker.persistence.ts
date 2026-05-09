@@ -1,15 +1,15 @@
 import { Injectable } from '@nestjs/common';
 import { InterfaceWorkerRepository } from '../../../../domain/contracts/worker.interface.repository';
-import { DatabaseServicePostgreSQL } from '../../../../../../shared/connections/database/postgresql/postgresql.service';
 import { WorkerResponse } from '../../../../domain/schemas/dto/response/worker.response';
 import { WorkerSqlResponse } from '../../../interfaces/worker.sql.response';
 import { RpcException } from '@nestjs/microservices';
 import { statusCode } from '../../../../../../settings/environments/status-code';
 import { WorkerAdapter } from '../adapters/worker.adapters';
+import { DatabaseAbstract } from '../../../../../../shared/connections/database/abstract/abstract.database';
 
 @Injectable()
 export class PostgreSqlWorkerPersistence implements InterfaceWorkerRepository {
-  constructor(private readonly postgreSqlService: DatabaseServicePostgreSQL) {}
+  constructor(private readonly databaseService: DatabaseAbstract) {}
 
   async findAllWorkers(): Promise<WorkerResponse[]> {
     try {
@@ -27,7 +27,7 @@ export class PostgreSqlWorkerPersistence implements InterfaceWorkerRepository {
       `;
 
       const result: WorkerSqlResponse[] =
-        await this.postgreSqlService.query<WorkerSqlResponse>(query);
+        await this.databaseService.query<WorkerSqlResponse>(query);
 
       if (result.length === 0) {
         throw new RpcException({
@@ -36,11 +36,9 @@ export class PostgreSqlWorkerPersistence implements InterfaceWorkerRepository {
         });
       }
 
-      const response: WorkerResponse[] = result.map((worker) =>
+      return result.map((worker) =>
         WorkerAdapter.fromWorkerSqlResponseToWorkerResponse(worker),
       );
-
-      return response;
     } catch (error) {
       throw error;
     }
@@ -54,8 +52,9 @@ export class PostgreSqlWorkerPersistence implements InterfaceWorkerRepository {
       const queryParams: any[] = [];
 
       if (searchQuery) {
-        whereClause = `WHERE t.tr_nombres ILIKE $1 OR t.tr_apellidos ILIKE $1 OR t.tr_identificacion ILIKE $1`;
-        queryParams.push(`%${searchQuery}%`);
+        whereClause = `WHERE t.tr_nombres ILIKE ? OR t.tr_apellidos ILIKE ? OR t.tr_identificacion ILIKE ?`;
+        const searchParam = `%${searchQuery}%`;
+        queryParams.push(searchParam, searchParam, searchParam);
       }
 
       const query: string = `
@@ -71,13 +70,13 @@ export class PostgreSqlWorkerPersistence implements InterfaceWorkerRepository {
       from trabajadores t
       ${whereClause}
       order by t.id_trabajador
-      limit $${queryParams.length + 1} offset $${queryParams.length + 2};
+      limit ? offset ?;
       `;
 
       queryParams.push(limit, offset);
 
       const result: WorkerSqlResponse[] =
-        await this.postgreSqlService.query<WorkerSqlResponse>(query, queryParams);
+        await this.databaseService.query<WorkerSqlResponse>(query, queryParams);
 
       if (result.length === 0) {
         throw new RpcException({
@@ -86,11 +85,9 @@ export class PostgreSqlWorkerPersistence implements InterfaceWorkerRepository {
         });
       }
 
-      const response: WorkerResponse[] = result.map((worker) =>
+      return result.map((worker) =>
         WorkerAdapter.fromWorkerSqlResponseToWorkerResponse(worker),
       );
-
-      return response;
     } catch (error) {
       throw error;
     }

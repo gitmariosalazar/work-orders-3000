@@ -1,15 +1,14 @@
 import { Module } from '@nestjs/common';
 import { KafkaServiceModule } from '../../../../../shared/kafka/kafka-service.module';
 import { WorkerController } from '../../controllers/worker.controller';
-import { DatabaseServicePostgreSQL } from '../../../../../shared/connections/database/postgresql/postgresql.service';
 import { WorkerService } from '../../../application/services/worker.service';
 import { PostgreSqlWorkerPersistence } from '../../repositories/postgresql/persistence/postgresql.worker.persistence';
+import { DatabasePersistenceModule } from '../../../../../shared/connections/database/database-persistence.module';
 
 @Module({
-  imports: [KafkaServiceModule],
+  imports: [KafkaServiceModule, DatabasePersistenceModule],
   controllers: [WorkerController],
   providers: [
-    DatabaseServicePostgreSQL,
     WorkerService,
     {
       provide: 'WorkerRepository',
